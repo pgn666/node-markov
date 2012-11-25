@@ -5,71 +5,47 @@ var fs = require('fs'),
     redis = require("./lib/node_redis/index"),
     client =  redis.createClient();
 
-//client.send_command('select', ['markov'], redis.print); ;
+//redis.debug_mode = true;
 
-var init = function() {
-    //client.send_command('FLUSHALL', [], redis.print);
-
+var init_3 = function(){
     var texts = fs.readdirSync(__dirname + '/texts');
-    var a, s, l = texts.length;
+    var s, w, l= texts.length;
+
+    client.send_command('FLUSHDB', [], redis.print);
+
     for(var i = 0; i < l; i++) {
         var filename = __dirname + '/texts/' + texts[i];
         if(filename.indexOf('.txt')>-1){
-            console.log(filename);
+            console.log('filename: ' + filename);
             fs.readFile(filename, 'utf-8', function(err, data) {
-                var words = data.split(/\s+/);
-                for(var j = 0; j < words.length - 1; j++) {
-                    a = client.hincrby(words[j], words[j+1], 1);
-                    console.log(a);
-                    client.hgetall(words[j], function(result, data){
-                        console.log('result ' + result);
-                        console.log('data: ' + data);
-                    });
-                }
-            });
-        }
-    }
-    client.end();
-}
-
-var init_3 = function() {
-    //client.send_command('FLUSHALL', [], redis.print);
-    var texts = fs.readdirSync(__dirname + '/texts');
-    var a, l = texts.length;
-    var pair = '';
-    for(var i = 0; i < l; i++) {
-        var filename = __dirname + '/texts/' + texts[i];
-        if(filename.indexOf('.txt')>-1){
-            console.log(filename);
-            fs.readFile(filename, 'utf-8', function(err, data) {
-                var words = data.split(/\s+/);
+                words = data.split(/\s+/);
+                console.log(words);
                 for(var j = 0; j < words.length - 2; j++) {
-                    a = client.hincrby(words[j] + ' ' + words[j+1], words[j+2], 1);
-                    console.log(a);
-                    a = client.hgetall(words[j] + ' ' + words[j+1], function(result, data){
-                        console.log(result);
-                        console.log(data);
-                    });
-                    console.log(a);
+                    s = words[j] + ' ' + words[j+1];
+                    w = words[j+2];
+                    console.log(s + '- ' + w);
+                    client.hincrby(s, w, 1, redis.print);
+
                 }
             });
         }
     }
-    client.end();
 }
 
-var randomWord = function(callback) {
+var randomPair = function(callback) {
     client.randomkey(function(result, key) {
-        callback(key);
+        callback(key.split(' '));
     });
 }
 
-var nextWord = function(word, callback) {
-    console.log(word);
-    client.exists(word, function(err, data) {
+var nextWords = function(words, callback) {
+    var key = words.join(' ');
+    console.log('next key: ' + key);
+    if (key == null) { return; }
+    client.exists(key, function(err, data) {
         if (data == null) { callback(null); }
         else {
-            client.hgetall(word, function(result, data) {
+            client.hgetall(key, function(result, data) {
                 var sum = 0;
                 for (var i in data) {
                     sum += data[i];
@@ -81,7 +57,7 @@ var nextWord = function(word, callback) {
                     partial_sum += data[i];
                     if (partial_sum >= rand) { next = i; }
                 }
-                callback(next);
+                callback([words[1], next]);
             });
         }
     });
@@ -89,26 +65,30 @@ var nextWord = function(word, callback) {
 
 var randomSentence = function(callback) {
     var sentence = '';
-    randomWord( function(word) {
-        function build(next) {
-            sentence += ' ' + next;
+    randomPair( function(words) {
+        sentence += ' ' + words[0];
+        function build(words) {
+            sentence += ' ' + words[1];
             if (/(\.|!|\?)/.exec(sentence)) {
+                sys.puts(' = = = ');
                 sys.puts(sentence);
                 client.end();
             } else
-            { nextWord(next, build); }
+            { nextWords(words, build); }
         }
-        build(word);
+        build(words);
     });
 }
 
 
 if (process.argv[2] == 'init') {
     init();
-} if (process.argv[2] == 'init_3') {
+} else if (process.argv[2] == 'init_3') {
     init_3();
+} else if (process.argv[2] == 'rw') {
+    randomWord(function(k){
+        console.log(k)
+    });
 } else {
     randomSentence();
 }
-
-return;
