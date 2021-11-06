@@ -1,20 +1,40 @@
 
 
 var fs = require('fs'),
-    sys = require('sys'),
-    redis = require("./lib/node_redis/index"),
+    sys = require('util'),
+    redis = require('redis'),
     client =  redis.createClient();
 
 //redis.debug_mode = true;
+
+var init = function() {
+    client.send_command('info',[],console.log);
+    var texts = fs.readdirSync(__dirname + '/texts');
+    var s, l = texts.length;
+    for(var i = 0; i < l; i++) {
+        var filename = __dirname + '/texts/' + texts[i];
+        if(filename.indexOf('.txt')>-1){
+            console.log(filename);
+            fs.readFile(filename, 'utf-8', function(err, data) {
+                var words = data.split(/\s+/);
+                for(var j = 0; j < words.length - 1; j++) {
+                    client.hincrby(words[j], words[j+1], 1);
+                }
+            });
+        }
+    }
+    client.send_command('info',[],console.log);
+    client.end(true);
+}
 
 var init_3 = function(){
     var texts = fs.readdirSync(__dirname + '/texts');
     var s, w, l= texts.length;
 
-    client.send_command('FLUSHDB', [], redis.print);
+    //client.send_command('FLUSHDB', [], redis.print);
 
     for(var i = 0; i < l; i++) {
-        var filename = __dirname + '/texts/' + texts[i];
+        var filename = __dirname + '/texts/lab' + texts[i];
         if(filename.indexOf('.txt')>-1){
             console.log('filename: ' + filename);
             fs.readFile(filename, 'utf-8', function(err, data) {
@@ -30,6 +50,8 @@ var init_3 = function(){
             });
         }
     }
+    client.send_command('info',[],console.log);
+    // client.end(true);
 }
 
 var randomPair = function(callback) {
@@ -72,7 +94,7 @@ var randomSentence = function(callback) {
             if (/(\.|!|\?)/.exec(sentence)) {
                 sys.puts(' = = = ');
                 sys.puts(sentence);
-                client.end();
+                client.end(true);
             } else
             { nextWords(words, build); }
         }
@@ -85,8 +107,8 @@ if (process.argv[2] == 'init') {
     init();
 } else if (process.argv[2] == 'init_3') {
     init_3();
-} else if (process.argv[2] == 'rw') {
-    randomWord(function(k){
+} else if (process.argv[2] == 'rs') {
+    randomSentence(function(k){
         console.log(k)
     });
 } else {

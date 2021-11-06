@@ -8,6 +8,6 @@
   "license": "MIT",
   "private": true,
   "dependencies": {
-    "node-redis": "^0.1.7"
+    "redis": "^3.1.2"
   }
 }
