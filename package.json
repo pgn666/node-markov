@@ -1,0 +1,13 @@
+{
+  "name": "node-markov",
+  "version": "0.0.1",
+  "description": "personal demo project",
+  "main": "server.js",
+  "repository": "https://github.com/pgn666/node-markov.git",
+  "author": "Maciek Zych aka pgn666 <maciek.zych@gmail.com>",
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "node-redis": "^0.1.7"
+  }
+}
