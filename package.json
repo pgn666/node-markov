@@ -2,7 +2,7 @@
   "name": "node-markov",
   "version": "0.0.1",
   "description": "personal demo project",
-  "main": "server.js",
+  "main": "index.js",
   "repository": "https://github.com/pgn666/node-markov.git",
   "author": "Maciek Zych aka pgn666 <maciek.zych@gmail.com>",
   "license": "MIT",
